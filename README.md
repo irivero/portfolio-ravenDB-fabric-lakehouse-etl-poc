@@ -290,3 +290,18 @@ Convert delete worker into a microservice
 ### Integration Developer
 ### 📧 idia.herrera@gmail.com
 🔗 GitHub: irivero
+
+
+## Keywords
+- RavenDB
+- Microsoft Fabric
+- Delta Lake
+- ETL Automation
+- JSON Flattening
+- Hard Delete Detection
+- Data Engineering
+- Event-Driven Architecture
+- Node.js Worker
+- PySpark
+- ADLS
+- Lakehouse
