@@ -239,6 +239,15 @@ The worker:
 | Centralized ETL Logic   | ✔      | One shared logic block                    |
 | Hard Delete Detection   | ✔      | Via external subscription worker          |
 
+## Automated tests
+I have created a notebook for the automated tests. This notebook is a comprehensive test suite for the silver_{table} Delta table that validates data quality and schema integrity. It performs six categories of assertions: (1) verifies the table exists and contains records, 
+(2) inspects the schema to ensure no complex types (StructType, MapType, ArrayType) remain from the source, indicating proper flattening, 
+(3) samples all string columns to detect JSON-serialized values that should have been normalized, 
+(4) validates the upsert key (CustomerId) has no NULL values or duplicates, and 
+(5) compiles all test results into a styled pandas DataFrame with color-coded PASS/FAIL indicators. 
+
+The notebook is designed to run as a quality gate in a data pipeline, hard-failing (via assertion) if any test fails, ensuring downstream consumers receive properly flattened, normalized data without nested structures.
+<img width="664" height="550" alt="image" src="https://github.com/user-attachments/assets/18f2fae1-aaa1-4f19-ae20-7f62e22fdb73" />
 
 ## 🧰 Technologies Used
 
