@@ -162,3 +162,131 @@ No duplicated logic
 Easy onboarding of new collections
 
 ## 🚀 4. Hard Delete Detection Using a RavenDB Subscription Worker
+✔ Validated (External Mechanism)
+Since RavenDB OLAP ETL does not handle deletes, I implemented a Node.js worker using RavenDB Subscriptions.
+The worker:
+
+1. Listens for real-time Delete events
+2. Extracts document ID and collection
+3. Writes deletion logs to ADLS
+4. Enables Fabric to synchronize deletions in analytical tables
+
+```JavaScript
+  const changesClient = store.changes(DATABASE_NAME);
+
+  changesClient.forDocumentsInCollection(COLLECTION)
+      .on("data", (change) => {
+          if (change.type !== "Delete") return;
+  
+          const record = {
+              timestamp:     new Date().toISOString(),
+              id:            change.id,
+              collection:    COLLECTION,
+              changeVector:  change.changeVector ?? "",
+          };
+  
+          pendingDeletes.push(record);
+          console.log("DELETE detectado -> encolado | ID:", change.id);
+      })
+      .on("error", (err) => {
+          console.error("ERROR Changes API:", err.message ?? err);
+      });
+
+    ...
+
+    for (const [collection, records] of Object.entries(byCollection)) {
+        try {
+            const filePath   = getHourlyFilePath(collection);
+            const fsClient   = adlsClient.getFileSystemClient(ADLS_FILESYSTEM);
+            const fileClient = fsClient.getFileClient(filePath);
+
+            let offset = 0;
+
+            // Si el archivo no existe, lo crea con header CSV
+            try {
+                const props = await fileClient.getProperties();
+                offset = props.contentLength;
+            } catch (_) {
+                await fileClient.create();
+                const headerBuf = Buffer.from(CSV_HEADER);
+                await fileClient.append(headerBuf, 0, headerBuf.length);
+                await fileClient.flush(headerBuf.length);
+                offset = headerBuf.length;
+            }
+
+            // Escribe las lineas nuevas
+            const lines = records
+                .map(r => `"${r.timestamp}","${r.id}","${r.collection}","${r.changeVector || ""}"`)
+                .join("\n") + "\n";
+
+            const dataBuf = Buffer.from(lines);
+            await fileClient.append(dataBuf, offset, dataBuf.length);
+            await fileClient.flush(offset + dataBuf.length);
+
+            console.log(`ADLS: ${records.length} delete(s) -> ${filePath}`);
+        } catch (err) {
+            console.error(`Error escribiendo en ADLS [${collection}]:`, err.message);
+        }
+    }
+  ```
+
+## 📊 POC Results Summary
+
+| Capability              | Status | Description                               |
+|-------------------------|--------|-------------------------------------------|
+| Schema Evolution        | ✔      | Fully automatic column detection          |
+| JSON Flattening         | ✔      | Recursive, reusable transform             |
+| Centralized ETL Logic   | ✔      | One shared logic block                    |
+| Hard Delete Detection   | ✔      | Via external subscription worker          |
+
+
+## 🧰 Technologies Used
+
+##### RavenDB (OLAP ETL, Subscriptions)
+##### Azure Data Lake Storage (ADLS)
+##### Microsoft Fabric Lakehouse (Delta, PySpark, Notebooks)
+##### Node.js
+##### Python
+##### Parquet & Delta Lake
+
+
+## 📁 Repository Structure
+
+```
+portfolio-raven-fabric-etl-poc/
+│
+├── notebooks/
+│   ├── validation_schema_evolution.ipynb
+│   └── flattening_tests.ipynb
+│
+├── node_worker/
+│   └── delete_subscription_worker.js
+│
+├── etl_scripts/
+│   └── flatten_json.js
+│
+│
+└── README.md
+
+```
+
+## 🧠 Key Learnings
+
+How to design schema-agnostic pipelines for NoSQL sources
+Best practices for Lakehouse ingestion in Fabric
+Working with real-time event-driven architectures
+Data modeling considerations for Delta Lake
+
+
+## 📌 Next Steps
+
+Add array processing strategy in flattening
+Add Azure Functions for orchestration
+Convert delete worker into a microservice
+
+
+## ✨ Author
+### Idia Herrera
+### Integration Developer
+### 📧 idia.herrera@gmail.com
+🔗 GitHub: irivero
