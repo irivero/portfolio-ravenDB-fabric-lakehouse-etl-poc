@@ -1,4 +1,4 @@
-# RavenDB → Microsoft Fabric Lakehouse ETL (POC)
+# RavenDB → Microsoft Fabric Lakehouse ETL (POC) by IntegrIdia
 #### Dynamic Schema Evolution, Automated Flattening, Centralized Transformations & Hard Delete Detection
 
 ## 📌 Project Overview
@@ -295,8 +295,7 @@ Convert delete worker into a microservice
 
 
 ## ✨ Author
-### Idia Herrera
-### Integration Developer
+### IntegrIdia
 ### 📧 idia.herrera@gmail.com
 🔗 GitHub: irivero
 
